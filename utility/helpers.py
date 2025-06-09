@@ -23,6 +23,14 @@ def request_poster(path):
     r = requests.post(web_address, data=values)
     return r
 
+def connectionCheck() -> bool:
+    try:
+        response = requests.get("https://google.com", timeout=5)
+        return True
+    except requests.ConnectionError:
+        return False
+
+
 def run_credential_gui():
     def submit_credentials():
         web_address = entry_web.get()
@@ -145,20 +153,14 @@ def cron_job(python_pth, exec_pth, cron_path):
     job.enable()
     messagebox.showinfo('Success', 'Automization installed!', parent=root)
 
-    
-def checkConnection(response)->bool:
-    if response.status_code == 200:
-        return True
-    else:
-        return False
 
 def looper(response, interval_mins, cred_pth):
     while True:
         now = datetime.datetime.now()
         time = now.strftime("%Y-%m-%d %H:%M:%S")
         sleep(int(interval_mins)*60)
-        print(time + " connected")
-        if not checkConnection(response):
+        print(time + ": Internet connected")
+        if not connectionCheck:
             print(time +  " connection interruptet. Reconnecting")
             response = hlp.request_poster(cred_pth)
             if response.status_code == 200:
