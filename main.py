@@ -4,9 +4,8 @@ import os
 import requests
 
 cred_pth = os.path.dirname(__file__)+'/credentials.yaml'
+wifi_pth = os.path.dirname(__file__)+'/wifi_credentials.yaml'
 time_pth = os.path.dirname(__file__)+'/time.yaml'
-python_pth = os.path.dirname(__file__)+'/.venv/bin/python'
-exec_pth = os.path.dirname(__file__)+'/main.py'
 
 def main():
 
@@ -14,12 +13,13 @@ def main():
     if not os.path.exists(cred_pth):
         hlp.run_credential_gui()
 
-    #posting request based on entered values
-    response = hlp.request_poster(cred_pth)
+    #check if wifi is already defined
+    if not os.path.exists(wifi_pth):
+        hlp.save_multiple_wifi_credentials()
 
+    #posting request based on entered values
+    check = hlp.intialRequest(cred_pth)
     
-    check = hlp.check_login(response)
-   
     #20 attempts max for entering fitting credits
     for i in range(0, 20):
         if check:
@@ -27,24 +27,16 @@ def main():
             break
         else:
             hlp.run_credential_gui()
-            response = hlp.request_poster(cred_pth)
-            check = hlp.check_login(response)
-    
-    #check if cron already defined
+            check  = hlp.intialRequest(cred_pth)
+
+    #check if time already defined
     if not os.path.exists(time_pth):
         hlp.get_login_and_interval()
 
     time_input = yaml.safe_load(open(time_pth))
     interval_mins = time_input['check_interval']
 
-    hlp.looper(response, interval_mins, cred_pth)
+    hlp.looper(interval_mins, cred_pth)
     
-
-    '''
-    #create cronjob for relevant logintime
-    if check:
-        hlp.cron_job(python_pth, exec_pth, cron_path = cron_pth)
-    '''
-
 if __name__ == '__main__':
     main()

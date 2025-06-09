@@ -3,9 +3,9 @@ import os
 import yaml
 import tkinter as tk
 from tkinter import messagebox
-from crontab import CronTab
 import datetime
 from time import sleep
+from wireless import Wireless
 
 tk.TK_SILENCE_DEPRECIATION=1
 
@@ -137,32 +137,114 @@ def check_login(response) -> bool:
         root.update()
         return False
 
-def cron_job(python_pth, exec_pth, cron_path):
-    root = tk.Tk()
-    root.wm_attributes("-topmost", 1)
-    root.withdraw()
-    cron_data = yaml.safe_load(open(cron_path))
-    #sleep(5) #wait 5 seconds
-    login_time = cron_data['login_time']
-    time = datetime.time(hour=int(str(login_time)[0:1]), minute=int(str(login_time)[3:4]))
-    check_interval = cron_data['check_interval']
-    cron = CronTab()
-    job = cron.new(command = 'source' + python_pth + ' '+ exec_pth)
-    job.minute.every(check_interval)
-    job.setall(time)
-    #job.write()
-    job.enable()
-    messagebox.showinfo('Success', 'Automization installed!', parent=root)
-
-
-def looper(response, interval_mins, cred_pth):
+def looper(interval_mins, cred_pth):
     while True:
         now = datetime.datetime.now()
         time = now.strftime("%Y-%m-%d %H:%M:%S")
         sleep(int(interval_mins)*60)
         print(time + ": Internet connected")
-        if not connectionCheck:
+        if not wifiConnected:
             print(time +  " connection interruptet. Reconnecting")
-            response = hlp.request_poster(cred_pth)
-            if response.status_code == 200:
-                print (time + " reconnected")    
+            wireless = Wireless()
+            with open("wifi_credentials.yaml", "r") as file:
+                wifi_list = yaml.safe_load(file)
+            
+            for ssid, creds in wifi_list.items():
+                if wireless.current()==ssid:
+                    response = request_poster(cred_pth)
+                    if response.status_code == 200:
+                        print(time + ": " + ssid+" reconnected")
+                        sleep(15)
+                else:
+                    wireless.connect(ssid=ssid, password = {creds['password']})
+                    sleep(30)
+                    response = request_poster(cred_pth)
+                    if response.status_code == 200:
+                        print (time + ": " + ssid + " reconnected")
+
+def wifiConnected() -> bool:
+    connection = False
+    with open("wifi_credentials.yaml", "r") as file:
+        wifi_list = yaml.safe_load(file)
+
+    wireless = Wireless()
+    for ssid, creds in wifi_list.items():
+        if not wireless.current() == ssid:
+            wireless.connect(ssid=ssid, password= {creds['password']})
+            sleep(15)
+            if connectionCheck:
+                connection=True
+            else:
+                connection = False
+    return connection
+
+
+def save_multiple_wifi_credentials():
+    wifi_data = {}
+
+    def add_entry():
+        ssid = entry_ssid.get().strip()
+        password = entry_password.get().strip()
+        if not ssid:
+            messagebox.showwarning("Input Error", "SSID cannot be empty.")
+            return
+        wifi_data[ssid] = {"password": password}
+        entry_ssid.delete(0, tk.END)
+        entry_password.delete(0, tk.END)
+        messagebox.showinfo("Saved", f"Entry for '{ssid}' saved.")
+
+    def finish():
+        if os.path.exists("wifi_credentials.yaml"):
+            with open("wifi_credentials.yaml", "r") as file:
+                existing_data = yaml.safe_load(file) or {}
+        else:
+            existing_data = {}
+
+        existing_data.update(wifi_data)
+
+        with open("wifi_credentials.yaml", "w") as file:
+            yaml.dump(existing_data, file)
+
+        messagebox.showinfo("Done", "All entries saved to wifi_credentials.yaml")
+        window.destroy()
+
+    window = tk.Tk()
+    window.title("WiFi Credentials")
+    window.geometry("300x200")
+
+    tk.Label(window, text="WiFi SSID:").pack(pady=(10, 0))
+    entry_ssid = tk.Entry(window, width=30)
+    entry_ssid.pack()
+
+    tk.Label(window, text="WiFi Password:").pack(pady=(10, 0))
+    entry_password = tk.Entry(window, width=30, show="*")
+    entry_password.pack()
+
+    tk.Button(window, text="Add Entry", command=add_entry).pack(pady=(10, 0))
+    tk.Button(window, text="Finish & Save", command=finish).pack(pady=5)
+
+    window.mainloop()
+
+def intialRequest(cred_pth) -> bool:
+    wireless = Wireless()
+    responses = list()
+    with open("wifi_credentials.yaml", 'r') as file:
+        wifis = yaml.safe_load(file)
+
+    for ssid, creds in wifis.items():
+        wireless.connect(ssid=ssid, password={creds['password']})
+        sleep(15)
+        response = request_poster(cred_pth)
+        status_code = response.status_code
+        if status_code == 200:
+            print(ssid + ": Connection innitialized")
+        else:
+            print(ssid + ": Connection can't be innitialzied")
+        responses.append(response.status_code)
+
+
+    if sum(responses)/len(responses) == 200:
+        return True
+    else:
+        return False
+
