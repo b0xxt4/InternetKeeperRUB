@@ -1,9 +1,11 @@
 certifi==2025.4.26
 charset-normalizer==3.4.2
 idna==3.10
+packaging==25.0
 python-crontab==3.2.0
 python-dateutil==2.9.0.post0
 PyYAML==6.0.2
 requests==2.32.3
 six==1.17.0
 urllib3==2.4.0
+wireless==0.3.3
