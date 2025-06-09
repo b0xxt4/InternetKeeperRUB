@@ -82,7 +82,7 @@ def get_login_and_interval():
             check_interval = check_interval
         )
         print(f"Login Time: {login_time}, Check Interval: {check_interval} minutes")
-        with open('cron.yaml', 'w') as outputfile:
+        with open('time.yaml', 'w') as outputfile:
             yaml.dump(data, outputfile, default_flow_style=False)
         
         window.destroy()
@@ -137,14 +137,29 @@ def cron_job(python_pth, exec_pth, cron_path):
     login_time = cron_data['login_time']
     time = datetime.time(hour=int(str(login_time)[0:1]), minute=int(str(login_time)[3:4]))
     check_interval = cron_data['check_interval']
-    cron = CronTab(user='root')
+    cron = CronTab()
     job = cron.new(command = 'source' + python_pth + ' '+ exec_pth)
     job.minute.every(check_interval)
-    job.also.setall(time)
-    job.write()
+    job.setall(time)
+    #job.write()
+    job.enable()
     messagebox.showinfo('Success', 'Automization installed!', parent=root)
 
     
-    
+def checkConnection(response)->bool:
+    if response.status_code == 200:
+        return True
+    else:
+        return False
 
-    
+def looper(response, interval_mins, cred_pth):
+    while True:
+        now = datetime.datetime.now()
+        time = now.strftime("%Y-%m-%d %H:%M:%S")
+        sleep(int(interval_mins)*60)
+        print(time + " connected")
+        if not checkConnection(response):
+            print(time +  " connection interruptet. Reconnecting")
+            response = hlp.request_poster(cred_pth)
+            if response.status_code == 200:
+                print (time + " reconnected")    

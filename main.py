@@ -4,7 +4,7 @@ import os
 import requests
 
 cred_pth = os.path.dirname(__file__)+'/credentials.yaml'
-cron_pth = os.path.dirname(__file__)+'/cron.yaml'
+time_pth = os.path.dirname(__file__)+'/time.yaml'
 python_pth = os.path.dirname(__file__)+'/.venv/bin/python'
 exec_pth = os.path.dirname(__file__)+'/main.py'
 
@@ -23,19 +23,28 @@ def main():
     #20 attempts max for entering fitting credits
     for i in range(0, 20):
         if check:
+            print("Connected")
             break
         else:
             hlp.run_credential_gui()
             response = hlp.request_poster(cred_pth)
             check = hlp.check_login(response)
-
+    
     #check if cron already defined
-    if not os.path.exists(cron_pth):
+    if not os.path.exists(time_pth):
         hlp.get_login_and_interval()
 
+    time_input = yaml.safe_load(open(time_pth))
+    interval_mins = time_input['check_interval']
+
+    hlp.looper(response, interval_mins, cred_pth)
+    
+
+    '''
     #create cronjob for relevant logintime
     if check:
         hlp.cron_job(python_pth, exec_pth, cron_path = cron_pth)
+    '''
 
 if __name__ == '__main__':
     main()
