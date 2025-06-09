@@ -126,6 +126,7 @@ def check_login(response) -> bool:
             'The login works and can be used!',
             parent=root
             )
+        root.update()
         return True
     else:
         messagebox.showinfo(
@@ -133,8 +134,8 @@ def check_login(response) -> bool:
         'The login did not work. Check the entered credentials!',
         parent=root
         )
+        root.update()
         return False
-    root.destroy()
 
 def cron_job(python_pth, exec_pth, cron_path):
     root = tk.Tk()
