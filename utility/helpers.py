@@ -5,7 +5,6 @@ import tkinter as tk
 from tkinter import messagebox
 import datetime
 from time import sleep
-from wireless import Wireless
 import subprocess
 
 tk.TK_SILENCE_DEPRECIATION=1
