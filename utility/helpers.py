@@ -150,13 +150,15 @@ def looper(interval_mins, cred_pth):
                 wifi_list = yaml.safe_load(file)
             
             for ssid, creds in wifi_list.items():
-                if is_connected_to(ssid=ssid):
+                ssid_name = ssid.__name__
+                password = creds['password']
+                if is_connected_to(ssid=ssid_name):
                     response = request_poster(cred_pth)
                     if response.status_code == 200:
                         print(time + ": " + ssid+" reconnected")
                         sleep(15)
                 else:
-                    connect_to(ssid=ssid, password = {creds['password']})
+                    connect_to(ssid=ssid_name, password = password)
                     sleep(30)
                     response = request_poster(cred_pth)
                     if response.status_code == 200:
@@ -169,8 +171,10 @@ def wifiConnected() -> bool:
 
     list_connected = list()
     for ssid, creds in wifi_list.items():
-        if not is_connected_to(ssid=ssid):
-            connect_to(ssid=ssid, password= {creds['password']})
+        ssid_name = ssid.__name__
+        password = creds['password']
+        if not is_connected_to(ssid=ssid.name):
+            connect_to(ssid=ssid_name, password= password)
             sleep(15)
             if connectionCheck:
                 all_connected.append(True)
@@ -233,14 +237,16 @@ def intialRequest(cred_pth) -> bool:
         wifis = yaml.safe_load(file)
 
     for ssid, creds in wifis.items():
-        connect_to(ssid=ssid, password={creds['password']})
+        ssid_name = ssid.__name__
+        password = creds['password']
+        connect_to(ssid=ssid_name, password=password)
         sleep(15)
         response = request_poster(cred_pth)
         status_code = response.status_code
         if status_code == 200:
-            print(ssid + ": Connection innitialized")
+            print(ssid_name + ": Connection innitialized")
         else:
-            print(ssid + ": Connection can't be innitialzied")
+            print(ssid_name + ": Connection can't be innitialzied")
         responses.append(response.status_code)
 
 
