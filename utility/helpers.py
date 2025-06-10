@@ -6,6 +6,7 @@ from tkinter import messagebox
 import datetime
 from time import sleep
 from wireless import Wireless
+import subprocess
 
 tk.TK_SILENCE_DEPRECIATION=1
 
@@ -145,18 +146,18 @@ def looper(interval_mins, cred_pth):
         print(time + ": Internet connected")
         if not wifiConnected:
             print(time +  " connection interruptet. Reconnecting")
-            wireless = Wireless()
+            
             with open("wifi_credentials.yaml", "r") as file:
                 wifi_list = yaml.safe_load(file)
             
             for ssid, creds in wifi_list.items():
-                if wireless.current()==ssid:
+                if is_connected_to(ssid=ssid):
                     response = request_poster(cred_pth)
                     if response.status_code == 200:
                         print(time + ": " + ssid+" reconnected")
                         sleep(15)
                 else:
-                    wireless.connect(ssid=ssid, password = {creds['password']})
+                    connect_to(ssid=ssid, password = {creds['password']})
                     sleep(30)
                     response = request_poster(cred_pth)
                     if response.status_code == 200:
@@ -167,10 +168,10 @@ def wifiConnected() -> bool:
     with open("wifi_credentials.yaml", "r") as file:
         wifi_list = yaml.safe_load(file)
 
-    wireless = Wireless()
+    
     for ssid, creds in wifi_list.items():
-        if not wireless.current() == ssid:
-            wireless.connect(ssid=ssid, password= {creds['password']})
+        if not is_connected_to(ssid=ssid):
+            connect_to(ssid=ssid, password= {creds['password']})
             sleep(15)
             if connectionCheck:
                 connection=True
@@ -226,13 +227,13 @@ def save_multiple_wifi_credentials():
     window.mainloop()
 
 def intialRequest(cred_pth) -> bool:
-    wireless = Wireless()
+    
     responses = list()
     with open("wifi_credentials.yaml", 'r') as file:
         wifis = yaml.safe_load(file)
 
     for ssid, creds in wifis.items():
-        wireless.connect(ssid=ssid, password={creds['password']})
+        connect_to(ssid=ssid, password={creds['password']})
         sleep(15)
         response = request_poster(cred_pth)
         status_code = response.status_code
@@ -248,3 +249,36 @@ def intialRequest(cred_pth) -> bool:
     else:
         return False
 
+import subprocess
+
+def what_wifi():
+    process = subprocess.run(['nmcli', '-t', '-f', 'ACTIVE,SSID', 'dev', 'wifi'], stdout=subprocess.PIPE)
+    if process.returncode == 0:
+        return process.stdout.decode('utf-8').strip().split(':')[1]
+    else:
+        return ''
+
+def is_connected_to(ssid: str):
+    return what_wifi() == ssid
+
+def scan_wifi():
+    process = subprocess.run(['nmcli', '-t', '-f', 'SSID,SECURITY,SIGNAL', 'dev', 'wifi'], stdout=subprocess.PIPE)
+    if process.returncode == 0:
+        return process.stdout.decode('utf-8').strip().split('\n')
+    else:
+        return []
+        
+def is_wifi_available(ssid: str):
+    return ssid in [x.split(':')[0] for x in scan_wifi()]
+
+def connect_to(ssid: str, password: str):
+    if not is_wifi_available(ssid):
+        return False
+    subprocess.call(['nmcli', 'd', 'wifi', 'connect', ssid, 'password', password])
+    return is_connected_to(ssid)
+
+def connect_to_saved(ssid: str):
+    if not is_wifi_available(ssid):
+        return False
+    subprocess.call(['nmcli', 'c', 'up', ssid])
+    return is_connected_to(ssid)
