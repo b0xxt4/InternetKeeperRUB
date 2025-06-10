@@ -26,7 +26,7 @@ def request_poster(path):
 def connectionCheck() -> bool:
     try:
         response = requests.get("https://google.com", timeout=5)
-        return True
+        return repsonse.status_code == 200
     except requests.ConnectionError:
         return False
 
@@ -167,16 +167,17 @@ def wifiConnected() -> bool:
     with open("wifi_credentials.yaml", "r") as file:
         wifi_list = yaml.safe_load(file)
 
-    
+    list_connected = list()
     for ssid, creds in wifi_list.items():
         if not is_connected_to(ssid=ssid):
             connect_to(ssid=ssid, password= {creds['password']})
             sleep(15)
             if connectionCheck:
-                connection=True
+                all_connected.append(True)
             else:
-                connection = False
-    return connection
+                all_connected.append(False)
+    
+    return all(x is True for x in list_connected)
 
 
 def save_multiple_wifi_credentials():
