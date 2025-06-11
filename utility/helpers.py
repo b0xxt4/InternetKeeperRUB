@@ -6,6 +6,8 @@ from tkinter import messagebox
 import datetime
 from time import sleep
 from wireless import Wireless
+import subprocess
+import platform
 
 tk.TK_SILENCE_DEPRECIATION=1
 
@@ -25,9 +27,11 @@ def request_poster(path):
 
 def connectionCheck() -> bool:
     try:
-        response = requests.get("https://google.com", timeout=5)
+        urllib.request.urlopen("http://www.google.com", timeout=3)
+        print("Connected")
         return True
-    except requests.ConnectionError:
+    except:
+        print("Not Connected")
         return False
 
 
@@ -143,7 +147,7 @@ def looper(interval_mins, cred_pth):
         time = now.strftime("%Y-%m-%d %H:%M:%S")
         sleep(int(interval_mins)*60)
         print(time + ": Internet connected")
-        if not wifiConnected:
+        if not wifiConnected():
             print(time +  " connection interruptet. Reconnecting")
             wireless = Wireless()
             with open("wifi_credentials.yaml", "r") as file:
@@ -172,11 +176,11 @@ def wifiConnected() -> bool:
         if not wireless.current() == ssid:
             wireless.connect(ssid=ssid, password= {creds['password']})
             sleep(15)
-            if connectionCheck:
-                connection=True
+            if connectionCheck():
+                return True
             else:
-                connection = False
-    return connection
+                print(ssid+ " Connection Interrupted")
+    return False
 
 
 def save_multiple_wifi_credentials():
