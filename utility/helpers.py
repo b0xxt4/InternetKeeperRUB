@@ -143,7 +143,7 @@ def looper(interval_mins, cred_pth):
         time = now.strftime("%Y-%m-%d %H:%M:%S")
         sleep(int(interval_mins)*60)
         print(time + ": Internet connected")
-        if not wifiConnected:
+        if not wifiConnected():
             print(time +  " connection interruptet. Reconnecting")
             
             with open("wifi_credentials.yaml", "r") as file:
@@ -176,7 +176,7 @@ def wifiConnected() -> bool:
         if not is_connected_to(ssid=ssid.name):
             connect_to(ssid=ssid_name, password= password)
             sleep(15)
-            if connectionCheck:
+            if connectionCheck():
                 all_connected.append(True)
             else:
                 all_connected.append(False)
