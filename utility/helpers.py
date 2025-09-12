@@ -25,7 +25,7 @@ def request_poster(path):
 
 def connectionCheck() -> bool:
     try:
-        response = requests.get("https://google.com", timeout=5)
+        response = requests.get("https://google.com", timeout=60)
         return repsonse.status_code == 200
     except requests.ConnectionError:
         return False
@@ -150,7 +150,7 @@ def looper(interval_mins, cred_pth):
                 wifi_list = yaml.safe_load(file)
             
             for ssid, creds in wifi_list.items():
-                ssid_name = ssid.__name__
+                ssid_name = str(ssid)
                 password = creds['password']
                 if is_connected_to(ssid=ssid_name):
                     response = request_poster(cred_pth)
@@ -171,7 +171,7 @@ def wifiConnected() -> bool:
 
     list_connected = list()
     for ssid, creds in wifi_list.items():
-        ssid_name = ssid.__name__
+        ssid_name = str(ssid)
         password = creds['password']
         if not is_connected_to(ssid=ssid.name):
             connect_to(ssid=ssid_name, password= password)
@@ -237,7 +237,7 @@ def intialRequest(cred_pth) -> bool:
         wifis = yaml.safe_load(file)
 
     for ssid, creds in wifis.items():
-        ssid_name = ssid.__name__
+        ssid_name = str(ssid)
         password = creds['password']
         connect_to(ssid=ssid_name, password=password)
         sleep(15)
