@@ -156,12 +156,12 @@ def looper(interval_mins, cred_pth):
                     response = request_poster(cred_pth)
                     if response.status_code == 200:
                         print(time + ": " + ssid+" reconnected")
-                        sleep(15)
+                        sleep(300)
                 else:
                     connect_to(ssid=ssid_name, password = password)
                     sleep(30)
                     response = request_poster(cred_pth)
-                    if response.status_code == 200:
+                    if response.status_code == 200 & connectionCheck():
                         print (time + ": " + ssid + " reconnected")
 
 def wifiConnected() -> bool:
